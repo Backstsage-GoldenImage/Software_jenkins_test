@@ -11,6 +11,12 @@ pipeline {
 
     stages {
 
+        stage('Clean Workspace') {
+            steps {
+              deleteDir()
+            }
+        }
+          
         stage('Checkout Code') {
             steps {
                 checkout scm
@@ -32,7 +38,8 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh '''
-                docker build -t ${IMAGE_TAG} .
+                docker build --pull -t ${IMAGE_TAG} .
+                docker images | grep ${APP_NAME}
                 '''
             }
         }
@@ -63,7 +70,8 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
                     sh '''
-                        git clone https://${GITHUB_TOKEN}@github.com/BackstageSSPPoC/k8s-manifests.git
+                        rm -rf k8s-manifests
+                        git clone --depth 1 https://${GITHUB_TOKEN}@github.com/BackstageSSPPoC/k8s-manifests.git
                         cd k8s-manifests
         
                         mkdir -p apps/${APP_NAME}
@@ -71,7 +79,7 @@ pipeline {
                         cp -r ../manifest-templates/* apps/${APP_NAME}/
         
                         sed -i "s|\\${APP_NAME}|${APP_NAME}|g" apps/${APP_NAME}/*.yaml
-                        sed -i "s|\\${DOCKER_IMAGE}|${IMAGE_TAG}|g" apps/${APP_NAME}/deployment.yaml
+                        sed -i "s|\${DOCKER_IMAGE}|${IMAGE_TAG}|g" apps/${APP_NAME}/deployment.yaml
         
                         git config --global --add safe.directory '*'
                         git config user.email "jenkins@local"
@@ -79,7 +87,7 @@ pipeline {
         
                         git add .
                         git commit -m "Deploy ${APP_NAME} build ${BUILD_NUMBER}" || true
-                        git push
+                        git push origin main
                     '''
                 }
             }
