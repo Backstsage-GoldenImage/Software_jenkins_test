@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/Backstsage-GoldenImage/k8s-artifact.git
+    repoURL: https://github.com/Backstage-GoldenImage/k8s-artifact.git
     targetRevision: main
     path: apps/${APP_NAME}
   destination:
@@ -17,3 +17,4 @@ spec:
       prune: true
 
       selfHeal: true
+
